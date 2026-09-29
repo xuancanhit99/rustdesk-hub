@@ -7,7 +7,9 @@ from pathlib import Path, PurePosixPath
 ROOT = Path(__file__).resolve().parents[1]
 REPOSITORY_ROOT = ROOT.parents[1]
 ALLOWLIST = ROOT / "packaging" / "windows-files.txt"
-WORKFLOW = REPOSITORY_ROOT / ".github" / "workflows" / "rustdesk-hub-release.yml"
+STANDALONE_WORKFLOW = ROOT / ".github" / "workflows" / "release.yml"
+MONOREPO_WORKFLOW = REPOSITORY_ROOT / ".github" / "workflows" / "rustdesk-hub-release.yml"
+WORKFLOW = STANDALONE_WORKFLOW if STANDALONE_WORKFLOW.is_file() else MONOREPO_WORKFLOW
 
 
 def allowlisted_files():
@@ -87,16 +89,20 @@ class WindowsPackagingTests(unittest.TestCase):
         self.assertIn("SHA-256 mismatch", verify)
         self.assertIn("Compare-Object", verify)
 
-    def test_release_workflow_builds_but_does_not_publish(self):
+    def test_release_workflow_is_pinned_and_has_expected_publish_policy(self):
         self.assertTrue(WORKFLOW.is_file())
         text = WORKFLOW.read_text(encoding="utf-8")
-        self.assertIn("permissions:\n  contents: read", text)
         self.assertIn("Build-WindowsPackage.ps1", text)
-        self.assertIn("Test-WindowsPackaging.ps1", text)
         self.assertIn("actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02", text)
-        self.assertNotIn("contents: write", text)
-        self.assertNotIn("gh release", text.lower())
-        self.assertNotIn("softprops/action-gh-release", text)
+        if WORKFLOW == STANDALONE_WORKFLOW:
+            self.assertIn("contents: write", text)
+            self.assertIn("gh release create", text.lower())
+            self.assertIn("Test-WindowsPackage.ps1", text)
+        else:
+            self.assertIn("permissions:\n  contents: read", text)
+            self.assertIn("Test-WindowsPackaging.ps1", text)
+            self.assertNotIn("contents: write", text)
+            self.assertNotIn("gh release", text.lower())
         action_refs = re.findall(r"uses:\s+[^@\s]+@([^\s#]+)", text)
         self.assertTrue(action_refs)
         self.assertTrue(all(re.fullmatch(r"[0-9a-f]{40}", ref) for ref in action_refs))
