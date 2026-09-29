@@ -1,10 +1,10 @@
-# Windows release packaging
+# Đóng gói bản phát hành Windows
 
-The supported Windows artifact is an unsigned ZIP containing the Docker
-Compose server bundle, operational PowerShell/CMD wrappers, client onboarding
-CLI, documentation and tests. It deliberately contains no RustDesk GUI binary.
+Artifact Windows được hỗ trợ là một file ZIP chưa ký, chứa server bundle Docker
+Compose, wrapper PowerShell/CMD để vận hành, CLI onboarding client, tài liệu và
+bộ test. Gói này chủ ý không chứa RustDesk GUI binary.
 
-Build and verify locally:
+Dựng và xác minh tại máy cục bộ:
 
 ```powershell
 .\packaging\Build-WindowsPackage.ps1 -Force
@@ -13,34 +13,32 @@ Build and verify locally:
   -RunBundleTests
 ```
 
-Or run the complete packaging regression, including a tamper rejection check:
+Hoặc chạy toàn bộ regression đóng gói, bao gồm phép thử từ chối archive bị sửa:
 
 ```powershell
 .\tests\Test-WindowsPackaging.ps1
 ```
 
-`windows-files.txt` is the only payload allowlist. The builder adds the
-repository MIT `LICENSE`, then generates `RELEASE-MANIFEST.json` with every
-file's size and SHA-256. The verifier rejects extra/missing files, executable
-or installer payloads, private-key-like files, generated state and checksum
-mismatches.
+`windows-files.txt` là allowlist payload duy nhất. Trình dựng thêm `LICENSE`,
+sau đó tạo `RELEASE-MANIFEST.json` chứa kích thước và SHA-256 của từng file.
+Trình xác minh từ chối file thừa/thiếu, executable hoặc installer không được
+phép, file giống private key, trạng thái sinh tự động và checksum không khớp.
 
-The ZIP also contains `windows/Verify-Release-Files.cmd`, which rechecks every
-extracted payload against `RELEASE-MANIFEST.json`. The external `.zip.sha256`
-must be checked first because the ZIP checksum is what protects the manifest.
+ZIP cũng chứa `windows/Verify-Release-Files.cmd` để kiểm tra lại mọi payload sau
+khi giải nén theo `RELEASE-MANIFEST.json`. Cần kiểm tra `.zip.sha256` bên ngoài
+trước vì checksum của ZIP là lớp bảo vệ chính cho manifest.
 
-The GitHub Actions workflow only uploads a workflow artifact. It has read-only
-repository permissions and does not create a GitHub Release or publish images.
+Workflow GitHub Actions trong repo standalone dựng, xác minh và tải artifact
+lên; khi tag `rustdesk-hub-v*` được push, workflow tạo GitHub Release. Workflow
+không tự tạo repository và không phát hành image container.
 
-## Current blockers for an installer
+## Trở ngại hiện tại đối với installer MSI/EXE
 
-- No Authenticode code-signing certificate or protected signing service is
-  configured. Shipping an unsigned MSI/EXE would add SmartScreen friction and
-  weaken provenance compared with the checksum-verifiable ZIP.
-- No WiX Toolset/Inno Setup project, upgrade code, install scope or uninstall
-  policy has been selected and reviewed.
-- No RustDesk GUI binary is built by this repository. Bundling an upstream GUI
-  would require an explicit version/signature verification and redistribution
-  license review; the ZIP instead links to official signed client releases.
-- The workflow has not been executed on GitHub yet, so hosted-runner behavior
-  remains locally validated but remotely unproven until a push or dispatch.
+- Chưa cấu hình chứng chỉ ký mã Authenticode hoặc dịch vụ ký được bảo vệ. Một
+  MSI/EXE chưa ký sẽ gặp SmartScreen và có provenance kém hơn ZIP có checksum.
+- Chưa chọn/review WiX Toolset hoặc Inno Setup, upgrade code, install scope và
+  chính sách uninstall.
+- Repository không dựng RustDesk GUI binary. Nếu đóng gói GUI upstream, cần xác
+  minh phiên bản/chữ ký và rà soát giấy phép phân phối lại; ZIP hiện liên kết
+  tới client chính thức đã ký.
+- Cần chạy workflow trên GitHub ít nhất một lần để xác minh hosted runner thực tế.
