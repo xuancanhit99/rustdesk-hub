@@ -1,0 +1,147 @@
+name: rustdesk-hub
+
+x-rustdesk-common: &rustdesk-common
+  image: "${RUSTDESK_HUB_IMAGE:-local/rustdesk-hub:1.1.16}"
+  build:
+    context: .
+    dockerfile: Dockerfile
+    args:
+      RUSTDESK_UPSTREAM_IMAGE: "${RUSTDESK_SERVER_IMAGE:-rustdesk/rustdesk-server:1.1.16@sha256:8ecdab65deb7c84652a626380e31d11a8f1fbafd97916d57f95c20628f943c00}"
+  restart: unless-stopped
+  read_only: true
+  cap_drop:
+    - ALL
+  cap_add:
+    - CHOWN
+    - DAC_OVERRIDE
+    - FOWNER
+    - SETGID
+    - SETUID
+  security_opt:
+    - no-new-privileges:true
+  pids_limit: 256
+  stop_grace_period: 20s
+  tmpfs:
+    - /tmp:size=16m,mode=1777
+  volumes:
+    - rustdesk-data:/data
+  networks:
+    - rustdesk
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  hbbs:
+    <<: *rustdesk-common
+    command:
+      - hbbs
+      - -r
+      - "${RUSTDESK_PUBLIC_HOST:-127.0.0.1}:${RUSTDESK_RELAY_ADVERTISED_PORT:-${RUSTDESK_RELAY_PORT:-21117}}"
+      - -k
+      - _
+    environment:
+      HOME: /data
+      RUST_LOG: "${RUSTDESK_LOG_LEVEL:-info}"
+      DB_URL: /data/db_v2.sqlite3
+      ALWAYS_USE_RELAY: "${RUSTDESK_ALWAYS_USE_RELAY:-N}"
+    ports:
+      - name: nat-test
+        target: 21115
+        published: "${RUSTDESK_NAT_TEST_PORT:-21115}"
+        host_ip: "${RUSTDESK_BIND_ADDRESS:-127.0.0.1}"
+        protocol: tcp
+      - name: rendezvous-tcp
+        target: 21116
+        published: "${RUSTDESK_RENDEZVOUS_PORT:-21116}"
+        host_ip: "${RUSTDESK_BIND_ADDRESS:-127.0.0.1}"
+        protocol: tcp
+      - name: rendezvous-udp
+        target: 21116
+        published: "${RUSTDESK_RENDEZVOUS_PORT:-21116}"
+        host_ip: "${RUSTDESK_BIND_ADDRESS:-127.0.0.1}"
+        protocol: udp
+      - name: rendezvous-websocket
+        target: 21118
+        published: "${RUSTDESK_WS_RENDEZVOUS_PORT:-21118}"
+        host_ip: "${RUSTDESK_BIND_ADDRESS:-127.0.0.1}"
+        protocol: tcp
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - nc -z -w 2 127.0.0.1 21116 && nc -z -w 2 127.0.0.1 21118
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+
+  hbbr:
+    <<: *rustdesk-common
+    command:
+      - hbbr
+      - -k
+      - _
+    depends_on:
+      hbbs:
+        condition: service_healthy
+    environment:
+      HOME: /data
+      RUST_LOG: "${RUSTDESK_LOG_LEVEL:-info}"
+      SINGLE_BANDWIDTH: "${RUSTDESK_SINGLE_BANDWIDTH_MBIT:-128}"
+      TOTAL_BANDWIDTH: "${RUSTDESK_TOTAL_BANDWIDTH_MBIT:-1024}"
+      LIMIT_SPEED: "${RUSTDESK_LIMIT_SPEED_MBIT:-32}"
+    ports:
+      - name: relay
+        target: 21117
+        published: "${RUSTDESK_RELAY_PORT:-21117}"
+        host_ip: "${RUSTDESK_BIND_ADDRESS:-127.0.0.1}"
+        protocol: tcp
+      - name: relay-websocket
+        target: 21119
+        published: "${RUSTDESK_WS_RELAY_PORT:-21119}"
+        host_ip: "${RUSTDESK_BIND_ADDRESS:-127.0.0.1}"
+        protocol: tcp
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - nc -z -w 2 127.0.0.1 21117 && nc -z -w 2 127.0.0.1 21119
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+
+  client-probe:
+    image: alpine:3.22.1@sha256:4bcff63911fcb4448bd4fdacec207030997caf25e9bea4045fa6c8c44de311d1
+    profiles:
+      - tools
+    command:
+      - sh
+      - -ec
+      - |
+        nc -z -w 3 hbbs 21116
+        nc -z -w 3 hbbs 21118
+        nc -z -w 3 hbbr 21117
+        nc -z -w 3 hbbr 21119
+        echo "RustDesk Hub internal client probe passed."
+    depends_on:
+      hbbs:
+        condition: service_healthy
+      hbbr:
+        condition: service_healthy
+    restart: "no"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - rustdesk
+
+volumes:
+  rustdesk-data:
+
+networks:
+  rustdesk:
+    driver: bridge

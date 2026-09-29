@@ -1,0 +1,8 @@
+# Chỉ sao chép các giá trị trong [options] vào cấu hình ứng dụng khách RustDesk,
+# hoặc đặt các trường tương ứng trong Settings > Network. Trước tiên, hãy thay
+# cả hai giá trị giữ chỗ.
+
+[options]
+custom-rendezvous-server = 'rustdesk.example.com:21116'
+relay-server = 'rustdesk.example.com:21117'
+key = 'REPLACE_WITH_OUTPUT_FROM_STATUS_SCRIPT'

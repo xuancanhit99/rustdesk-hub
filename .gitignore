@@ -1,0 +1,10 @@
+.env
+.env.*
+!.env.example
+data/
+*.normalized.json
+__pycache__/
+*.pyc
+client/generated/
+client/generated-*/
+dist/

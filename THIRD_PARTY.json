@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "components": [
+    {
+      "name": "RustDesk Server OSS",
+      "version": "1.1.16",
+      "type": "container-build-source",
+      "image": "rustdesk/rustdesk-server:1.1.16",
+      "digest": "sha256:8ecdab65deb7c84652a626380e31d11a8f1fbafd97916d57f95c20628f943c00",
+      "license": "AGPL-3.0",
+      "source": "https://github.com/rustdesk/rustdesk-server"
+    },
+    {
+      "name": "Alpine Linux",
+      "version": "3.22.1",
+      "type": "container-runtime-base",
+      "image": "alpine:3.22.1",
+      "digest": "sha256:4bcff63911fcb4448bd4fdacec207030997caf25e9bea4045fa6c8c44de311d1",
+      "license": "Multiple; see Alpine package metadata",
+      "source": "https://gitlab.alpinelinux.org/alpine"
+    }
+  ],
+  "notBundled": [
+    {
+      "name": "RustDesk desktop client",
+      "reason": "The release ZIP contains no GUI binary. Install an official signed client separately.",
+      "download": "https://github.com/rustdesk/rustdesk/releases"
+    },
+    {
+      "name": "Docker Desktop or Docker Engine",
+      "reason": "Runtime prerequisite supplied by the operator.",
+      "download": "https://docs.docker.com/desktop/setup/install/windows-install/"
+    },
+    {
+      "name": "Python",
+      "reason": "Python 3.10+ is required only for client onboarding and automated tests.",
+      "download": "https://www.python.org/downloads/windows/"
+    }
+  ]
+}

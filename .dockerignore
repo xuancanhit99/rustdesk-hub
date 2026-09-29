@@ -1,0 +1,14 @@
+.env
+.git
+data
+tests
+scripts
+client
+README.md
+NOTICE.md
+packaging
+windows
+VERSION
+THIRD_PARTY.json
+LICENSE
+dist
