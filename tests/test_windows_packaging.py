@@ -29,6 +29,7 @@ class WindowsPackagingTests(unittest.TestCase):
     def test_version_and_dependency_metadata(self):
         version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
         self.assertRegex(version, r"^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$")
+        self.assertIn("MIT License", (ROOT / "LICENSE").read_text(encoding="utf-8"))
         metadata = json.loads((ROOT / "THIRD_PARTY.json").read_text(encoding="utf-8"))
         self.assertEqual(metadata["schemaVersion"], 1)
         names = {item["name"] for item in metadata["components"]}

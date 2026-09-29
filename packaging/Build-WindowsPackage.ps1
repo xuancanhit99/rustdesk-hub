@@ -61,7 +61,9 @@ try {
         Copy-Item -LiteralPath $source -Destination $destination
     }
 
-    Copy-Item -LiteralPath (Join-Path $repositoryRoot 'LICENSE') -Destination (Join-Path $packageRoot 'LICENSE')
+    $licenseSource = Join-Path $productRoot 'LICENSE'
+    if (-not (Test-Path -LiteralPath $licenseSource)) { $licenseSource = Join-Path $repositoryRoot 'LICENSE' }
+    Copy-Item -LiteralPath $licenseSource -Destination (Join-Path $packageRoot 'LICENSE')
 
     $gitCommit = 'unavailable'
     if (Get-Command git -ErrorAction SilentlyContinue) {
