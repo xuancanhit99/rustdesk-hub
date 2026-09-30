@@ -67,8 +67,10 @@ try {
 
     $gitCommit = 'unavailable'
     if (Get-Command git -ErrorAction SilentlyContinue) {
-        $candidateCommit = (& git -C $repositoryRoot rev-parse HEAD 2>$null)
+        $candidateCommit = (& git -C $productRoot rev-parse HEAD 2>$null)
         if ($LASTEXITCODE -eq 0 -and $candidateCommit) { $gitCommit = $candidateCommit.Trim() }
+        # Git metadata is optional when packaging an extracted source archive.
+        $global:LASTEXITCODE = 0
     }
 
     $manifestFiles = @()
