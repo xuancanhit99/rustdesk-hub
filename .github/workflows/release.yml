@@ -41,7 +41,6 @@ jobs:
           path: |
             dist/*.zip
             dist/*.sha256
-            THIRD_PARTY.json
           if-no-files-found: error
 
   publish:
