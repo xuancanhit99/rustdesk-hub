@@ -39,8 +39,8 @@ jobs:
         with:
           name: rustdesk-hub-windows
           path: |
-            dist/*.zip
-            dist/*.sha256
+            dist/rustdesk-hub-windows-*.zip
+            dist/rustdesk-hub-windows-*.zip.sha256
           if-no-files-found: error
 
   publish:
